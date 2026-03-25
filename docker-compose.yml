@@ -1,0 +1,52 @@
+# docker-compose.yml
+version: "3.8"
+
+services:
+  github-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        RUNNER_VERSION: 2.333.0
+        RUNNER_ARCH: x64
+
+    container_name: github-runner
+    restart: always
+
+    environment:
+      # GitHub Configuration
+      - RUNNER_URL= # Change this to your GitHub repository or organization URL
+      - RUNNER_TOKEN= # Change this to your GitHub runner registration token
+      - RUNNER_NAME= # Change this to a unique name for your runner
+      - RUNNER_WORK= _work # Optional: Change this to a specific work directory inside the container
+      - RUNNER_GROUP= # Optional: Change this to a specific runner group in your GitHub repository or organization
+      - RUNNER_LABELS= # Optional: Add custom labels for your runner (comma-separated)
+
+      # Runner settings
+      - RUNNER_ALLOW_RUNASROOT= # Allow running as root (not recommended for production)
+
+    volumes:
+      # Persist runner data
+      - ./runner-data:/home/runner/_work
+      - ./runner-config:/home/runner/.runner
+
+      # Access Docker (for Docker-in-Docker scenarios)
+      - /var/run/docker.sock:/var/run/docker.sock
+
+    networks:
+      - runner-network
+
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "run.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  runner-network:
+    driver: bridge
+
+volumes:
+  runner-data:
+  runner-config:
